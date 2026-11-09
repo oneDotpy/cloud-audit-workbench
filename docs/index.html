@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cloud Audit Workbench</title>
+<meta name="description" content="Turns cloud security scanner output into control-mapped, risk-explained, trackable audit evidence.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700&family=Source+Serif+4:wght@600&display=swap">
+<style>
+:root {
+  --bg: #fbfbfa; --surface: #ffffff; --ink: #1d1d1b; --ink-2: #4a4a46; --muted: #6b6b67;
+  --line: #e3e2de; --accent: #1f3864; --accent-soft: #e8edf6;
+  --high: #104281; --med: #2a78d6; --low: #86b6ef;
+  --code-bg: #f3f2ef;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #161615; --surface: #1f1f1e; --ink: #ecebe8; --ink-2: #c4c3bf; --muted: #9a9995;
+    --line: #34332f; --accent: #8fb2ea; --accent-soft: #1f2a3d;
+    --high: #8fb8f0; --med: #4f8fdc; --low: #2a5a9a; --code-bg: #262624;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #161615; --surface: #1f1f1e; --ink: #ecebe8; --ink-2: #c4c3bf; --muted: #9a9995;
+  --line: #34332f; --accent: #8fb2ea; --accent-soft: #1f2a3d;
+  --high: #8fb8f0; --med: #4f8fdc; --low: #2a5a9a; --code-bg: #262624;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 17px/1.6 "Source Sans 3", system-ui, sans-serif; }
+.wrap { max-width: 980px; margin: 0 auto; padding: 0 16px; }
+header { border-bottom: 1px solid var(--line); background: var(--surface); }
+header .wrap { padding-top: 56px; padding-bottom: 40px; }
+.eyebrow { color: var(--muted); font-size: 14px; letter-spacing: .04em; text-transform: uppercase; margin: 0 0 8px; }
+h1 { font-family: "Source Serif 4", Georgia, serif; font-size: clamp(32px, 6vw, 48px); line-height: 1.1; margin: 0 0 16px; color: var(--ink); }
+.lede { font-size: 20px; color: var(--ink-2); max-width: 46em; margin: 0 0 24px; }
+.actions { display: flex; flex-wrap: wrap; gap: 12px; }
+.btn { display: inline-block; padding: 10px 18px; border-radius: 6px; font-weight: 600; text-decoration: none; border: 1px solid var(--accent); }
+.btn.primary { background: var(--accent); color: var(--surface); }
+.btn.secondary { color: var(--accent); background: transparent; }
+.btn:focus-visible, a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+section { padding: 48px 0 8px; }
+h2 { font-family: "Source Serif 4", Georgia, serif; font-size: 28px; margin: 0 0 16px; }
+h3 { font-size: 18px; margin: 24px 0 8px; }
+p { margin: 0 0 16px; max-width: 46em; }
+a { color: var(--accent); }
+.note { border-left: 3px solid var(--accent); background: var(--accent-soft); padding: 12px 16px; border-radius: 0 6px 6px 0; margin: 24px 0 0; color: var(--ink-2); font-size: 15px; }
+.table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: 15px; }
+th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { color: var(--muted); font-weight: 600; font-size: 13px; text-transform: uppercase; letter-spacing: .03em; }
+tr:last-child td { border-bottom: 0; }
+td.num { font-variant-numeric: tabular-nums; text-align: right; }
+th.num { text-align: right; }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin: 0 0 24px; }
+.stat { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 16px; }
+.stat .v { font-size: 32px; font-weight: 700; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.stat .k { color: var(--muted); font-size: 14px; }
+.flow { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 8px 0 16px; }
+.flow span.step { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 8px 12px; font-size: 15px; }
+.flow span.step b { display: block; font-size: 12px; color: var(--muted); font-weight: 600; }
+.flow span.arrow { color: var(--muted); }
+code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .88em; background: var(--code-bg); padding: 1px 5px; border-radius: 4px; }
+pre { background: var(--code-bg); border: 1px solid var(--line); border-radius: 8px; padding: 16px; overflow-x: auto; font-size: 14px; line-height: 1.5; }
+pre code { background: none; padding: 0; }
+.rules { padding-left: 20px; max-width: 46em; }
+.rules li { margin-bottom: 8px; }
+figure { margin: 0 0 32px; }
+figure img { width: 100%; height: auto; border: 1px solid var(--line); border-radius: 8px; display: block; background: #fff; }
+figcaption { color: var(--muted); font-size: 14px; margin-top: 8px; }
+.obs { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 20px 24px; }
+.obs dl { display: grid; grid-template-columns: 9em 1fr; gap: 6px 16px; margin: 0; }
+.obs dt { font-weight: 600; color: var(--ink-2); }
+.obs dd { margin: 0; }
+.pill { display: inline-block; font-size: 13px; font-weight: 600; padding: 1px 10px; border-radius: 999px; background: var(--high); color: var(--surface); vertical-align: middle; margin-left: 8px; }
+footer { border-top: 1px solid var(--line); margin-top: 56px; padding: 24px 0 48px; color: var(--muted); font-size: 14px; }
+@media (max-width: 600px) {
+  .obs dl { grid-template-columns: 1fr; }
+  .obs dt { margin-top: 8px; }
+  .lede { font-size: 18px; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <p class="eyebrow">Portfolio project · IT audit &amp; technology risk</p>
+    <h1>Cloud Audit Workbench</h1>
+    <p class="lede">Scanners find cloud misconfigurations. Auditors need those findings mapped to controls, explained in business terms, prioritized, and tracked across reviews. This tool is that layer.</p>
+    <div class="actions">
+      <a class="btn primary" href="https://github.com/oneDotpy/cloud-audit-workbench">View source on GitHub</a>
+      <a class="btn secondary" href="samples/workpaper_v2.xlsx" download>Download sample workpaper (.xlsx)</a>
+      <a class="btn secondary" href="https://github.com/oneDotpy/cloud-audit-workbench/blob/main/docs/samples/observations_v2.md">Sample observations memo</a>
+    </div>
+    <p class="note">The sample infrastructure is synthetic and intentionally insecure Terraform written for this project. The tool scans files locally and never connects to or modifies real cloud resources.</p>
+  </div>
+</header>
+
+<main class="wrap">
+
+<section>
+  <h2>The problem</h2>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>A scanner gives you</th><th>An auditor needs</th></tr></thead>
+      <tbody>
+        <tr><td><code>CKV_AWS_24 FAILED aws_security_group.admin_access</code></td><td>Which control failed: <em>remote administrative access is restricted to approved networks</em></td></tr>
+        <tr><td>A rule title</td><td>The business risk in plain language, and a recommendation</td></tr>
+        <tr><td>A severity, sometimes (open-source Checkov leaves it empty)</td><td>A documented, explainable priority</td></tr>
+        <tr><td>A point-in-time list</td><td>Remediation status across reviews: New, Resolved, Persisting</td></tr>
+        <tr><td>JSON</td><td>A workpaper with scope, evidence and sign-off fields</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section>
+  <h2>How it works</h2>
+  <div class="flow" aria-label="Pipeline">
+    <span class="step"><b>Input</b>Checkov / Prowler JSON</span><span class="arrow" aria-hidden="true">→</span>
+    <span class="step"><b>Parse</b>Normalize + dedupe</span><span class="arrow" aria-hidden="true">→</span>
+    <span class="step"><b>Map</b>Control domain</span><span class="arrow" aria-hidden="true">→</span>
+    <span class="step"><b>Prioritize</b>Documented rules</span><span class="arrow" aria-hidden="true">→</span>
+    <span class="step"><b>Track</b>New / Resolved / Persisting</span><span class="arrow" aria-hidden="true">→</span>
+    <span class="step"><b>Report</b>Excel workpaper + memo</span>
+  </div>
+  <p>Every finding is normalized into one schema and given a stable ID built from tool, check and resource. File paths and line numbers are excluded, so the same issue is recognized in the next review even when the code moves.</p>
+  <p>An editable YAML file maps each check to one of six IT control domains, with a control objective, the business risk and a recommendation. Checks that have not been assessed go to <em>Unmapped – requires review</em> instead of being guessed. Framework references (CIS and similar) are shown only when the scanner supplies them; none are invented.</p>
+</section>
+
+<section>
+  <h2>Results on the sample environment</h2>
+  <p>Version 1 of the sample infrastructure was scanned, then version 2, in which about half the issues were fixed and one new issue was introduced while remediating. Output from Checkov 3.4.3:</p>
+  <div class="stats">
+    <div class="stat"><div class="v">51</div><div class="k">Findings in v1</div></div>
+    <div class="stat"><div class="v">40</div><div class="k">Findings in v2</div></div>
+    <div class="stat"><div class="v">13</div><div class="k">Resolved</div></div>
+    <div class="stat"><div class="v">38</div><div class="k">Persisting</div></div>
+    <div class="stat"><div class="v">2</div><div class="k">New</div></div>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Control domain (v2)</th><th class="num">High</th><th class="num">Medium</th><th class="num">Low</th><th class="num">Total</th></tr></thead>
+      <tbody>
+        <tr><td>Logical Access &amp; Identity</td><td class="num">9</td><td class="num">1</td><td class="num">1</td><td class="num">11</td></tr>
+        <tr><td>Network Security</td><td class="num">2</td><td class="num">2</td><td class="num">0</td><td class="num">4</td></tr>
+        <tr><td>Data Protection &amp; Encryption</td><td class="num">1</td><td class="num">3</td><td class="num">0</td><td class="num">4</td></tr>
+        <tr><td>Logging &amp; Monitoring</td><td class="num">3</td><td class="num">4</td><td class="num">0</td><td class="num">7</td></tr>
+        <tr><td>Backup &amp; Resilience</td><td class="num">0</td><td class="num">6</td><td class="num">0</td><td class="num">6</td></tr>
+        <tr><td>Change &amp; Configuration Management</td><td class="num">0</td><td class="num">3</td><td class="num">2</td><td class="num">5</td></tr>
+        <tr><td>Unmapped – requires review</td><td class="num">0</td><td class="num">3</td><td class="num">0</td><td class="num">3</td></tr>
+        <tr><td><strong>Total</strong></td><td class="num"><strong>15</strong></td><td class="num"><strong>22</strong></td><td class="num"><strong>3</strong></td><td class="num"><strong>40</strong></td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section>
+  <h2>An observation, as reported</h2>
+  <div class="obs">
+    <h3 style="margin-top:0">Administrative ports open to the internet <span class="pill">High</span></h3>
+    <dl>
+      <dt>Control domain</dt><dd>Network Security</dd>
+      <dt>Criteria</dt><dd>Remote administrative access is restricted to approved networks and users.</dd>
+      <dt>Condition</dt><dd>2 checks failed on 1 resource: <code>aws_security_group.admin_access</code> (SSH port 22 and RDP port 3389 open to 0.0.0.0/0).</dd>
+      <dt>Risk</dt><dd>Remote login services can be reached by anyone on the internet, which invites automated password-guessing and exploitation attempts against servers.</dd>
+      <dt>Recommendation</dt><dd>Restrict SSH and RDP to a corporate IP range or bastion host, or replace direct access with AWS Systems Manager Session Manager.</dd>
+      <dt>Status</dt><dd>Persisting: open across 2 reviews.</dd>
+    </dl>
+  </div>
+</section>
+
+<section>
+  <h2>Prioritization rules</h2>
+  <ol class="rules">
+    <li><strong>Baseline</strong> from scanner severity. If the scanner gives none, use the reviewer-set default in the control mapping.</li>
+    <li><strong>Data stores</strong> (buckets, databases, volumes) are raised one level.</li>
+    <li><strong>Public exposure</strong> (reachable from the internet) is High.</li>
+    <li><strong>Logging gaps</strong> are at least Medium.</li>
+  </ol>
+  <p>Each finding records which rules applied, so every priority in the workpaper can be explained.</p>
+</section>
+
+<section>
+  <h2>Screenshots</h2>
+  <figure>
+    <img src="assets/overview.png" alt="Overview tab showing summary metrics and a stacked bar chart of findings by control domain and priority" loading="lazy">
+    <figcaption>Overview: summary metrics and findings by control domain.</figcaption>
+  </figure>
+  <figure>
+    <img src="assets/compare.png" alt="Run comparison tab listing new, resolved and persisting findings between v1 and v2" loading="lazy">
+    <figcaption>Run comparison: v1 to v2, with New, Resolved and Persisting findings.</figcaption>
+  </figure>
+  <figure>
+    <img src="assets/findings.png" alt="Findings tab with filters and a table of findings including control domain, issue, condition and business risk" loading="lazy">
+    <figcaption>Findings: filterable table with control objective, condition, business risk and evidence.</figcaption>
+  </figure>
+</section>
+
+<section>
+  <h2>Run it locally</h2>
+  <p>The interactive app is a Streamlit (Python) application, so it runs locally rather than on this static page.</p>
+<pre><code>git clone https://github.com/oneDotpy/cloud-audit-workbench.git
+cd cloud-audit-workbench
+python3.11 -m venv .venv &amp;&amp; source .venv/bin/activate
+pip install -r requirements.txt
+
+python -m src.pipeline scan sample_infra/v1
+python -m src.pipeline scan sample_infra/v2
+python -m pytest
+python -m streamlit run app.py</code></pre>
+</section>
+
+<section>
+  <h2>Limitations</h2>
+  <ul class="rules">
+    <li>Assesses infrastructure-as-code as written, not deployed resources.</li>
+    <li>Relies on the scanner's tests; it does not re-perform them.</li>
+    <li>The Prowler sample is hand-written to match Prowler 4.x JSON output, not produced by a live scan.</li>
+    <li>Renaming a resource shows as one Resolved and one New finding.</li>
+  </ul>
+</section>
+
+</main>
+
+<footer>
+  <div class="wrap">Built with Python, pandas, pydantic, openpyxl, Streamlit and Checkov. Sample data is synthetic.</div>
+</footer>
+
+</body>
+</html>

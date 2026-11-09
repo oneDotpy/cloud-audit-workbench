@@ -1,0 +1,126 @@
+[
+  {
+    "message": "S3 Bucket acme-customer-documents-example has public access through its bucket ACL.",
+    "metadata": {"event_code": "s3_bucket_public_access", "product": {"name": "Prowler", "vendor_name": "Prowler", "version": "4.5.0"}, "version": "1.3.0"},
+    "severity": "Critical",
+    "status_code": "FAIL",
+    "status_detail": "S3 Bucket acme-customer-documents-example has public access through its bucket ACL.",
+    "finding_info": {"title": "Ensure there are no S3 buckets open to Everyone or Any AWS user.", "uid": "prowler-aws-s3_bucket_public_access-111122223333-ap-southeast-1-acme-customer-documents-example"},
+    "resources": [{"uid": "arn:aws:s3:::acme-customer-documents-example", "name": "acme-customer-documents-example", "type": "AwsS3Bucket", "region": "ap-southeast-1"}],
+    "cloud": {"account": {"uid": "111122223333"}, "provider": "aws", "region": "ap-southeast-1"},
+    "remediation": {"desc": "Remove public grants from the bucket ACL and enable S3 Block Public Access.", "references": ["https://docs.aws.amazon.com/AmazonS3/latest/userguide/access-control-block-public-access.html"]},
+    "unmapped": {"compliance": {"CIS-1.4": ["2.1.5"]}}
+  },
+  {
+    "message": "S3 Bucket acme-finance-exports-example does not have default encryption with KMS.",
+    "metadata": {"event_code": "s3_bucket_kms_encryption", "product": {"name": "Prowler", "version": "4.5.0"}},
+    "severity": "Medium",
+    "status_code": "FAIL",
+    "status_detail": "S3 Bucket acme-finance-exports-example does not have default encryption with KMS.",
+    "finding_info": {"title": "Check if S3 buckets use KMS encryption."},
+    "resources": [{"uid": "arn:aws:s3:::acme-finance-exports-example", "type": "AwsS3Bucket", "region": "ap-southeast-1"}],
+    "cloud": {"account": {"uid": "111122223333"}, "region": "ap-southeast-1"}
+  },
+  {
+    "message": "Security group sg-0a1b2c3d4e5f60718 has SSH port 22 open to the Internet.",
+    "metadata": {"event_code": "ec2_securitygroup_allow_ingress_from_internet_to_tcp_port_22", "product": {"name": "Prowler", "version": "4.5.0"}},
+    "severity": "High",
+    "status_code": "FAIL",
+    "status_detail": "Security group admin-access (sg-0a1b2c3d4e5f60718) has SSH port 22 open to the Internet.",
+    "finding_info": {"title": "Ensure no security groups allow ingress from 0.0.0.0/0 or ::/0 to SSH port 22."},
+    "resources": [{"uid": "arn:aws:ec2:ap-southeast-1:111122223333:security-group/sg-0a1b2c3d4e5f60718", "type": "AwsEc2SecurityGroup", "region": "ap-southeast-1"}],
+    "cloud": {"account": {"uid": "111122223333"}, "region": "ap-southeast-1"},
+    "remediation": {"references": ["https://docs.aws.amazon.com/vpc/latest/userguide/vpc-security-groups.html"]},
+    "unmapped": {"compliance": {"CIS-1.4": ["5.2"]}}
+  },
+  {
+    "message": "Duplicate record of the SSH finding above (same check, same resource).",
+    "metadata": {"event_code": "ec2_securitygroup_allow_ingress_from_internet_to_tcp_port_22", "product": {"name": "Prowler", "version": "4.5.0"}},
+    "severity": "High",
+    "status_code": "FAIL",
+    "status_detail": "Security group admin-access (sg-0a1b2c3d4e5f60718) has SSH port 22 open to the Internet.",
+    "finding_info": {"title": "Ensure no security groups allow ingress from 0.0.0.0/0 or ::/0 to SSH port 22."},
+    "resources": [{"uid": "arn:aws:ec2:ap-southeast-1:111122223333:security-group/sg-0a1b2c3d4e5f60718", "type": "AwsEc2SecurityGroup", "region": "ap-southeast-1"}],
+    "cloud": {"account": {"uid": "111122223333"}, "region": "ap-southeast-1"}
+  },
+  {
+    "message": "RDS Instance customer-db is not encrypted.",
+    "metadata": {"event_code": "rds_instance_storage_encrypted", "product": {"name": "Prowler", "version": "4.5.0"}},
+    "severity": "Medium",
+    "status_code": "FAIL",
+    "status_detail": "RDS Instance customer-db is not encrypted.",
+    "finding_info": {"title": "Check if RDS instances storage is encrypted."},
+    "resources": [{"uid": "arn:aws:rds:ap-southeast-1:111122223333:db:customer-db", "type": "AwsRdsDbInstance", "region": "ap-southeast-1"}],
+    "cloud": {"account": {"uid": "111122223333"}, "region": "ap-southeast-1"}
+  },
+  {
+    "message": "RDS Instance customer-db does not have backups enabled.",
+    "metadata": {"event_code": "rds_instance_backup_enabled", "product": {"name": "Prowler", "version": "4.5.0"}},
+    "severity": "Medium",
+    "status_code": "FAIL",
+    "status_detail": "RDS Instance customer-db does not have backups enabled.",
+    "finding_info": {"title": "Check if RDS instances have backup enabled."},
+    "resources": [{"uid": "arn:aws:rds:ap-southeast-1:111122223333:db:customer-db", "type": "AwsRdsDbInstance", "region": "ap-southeast-1"}]
+  },
+  {
+    "message": "Root account does not have MFA enabled.",
+    "metadata": {"event_code": "iam_root_mfa_enabled", "product": {"name": "Prowler", "version": "4.5.0"}},
+    "severity": "Critical",
+    "status_code": "FAIL",
+    "status_detail": "MFA is not enabled for root account.",
+    "finding_info": {"title": "Ensure MFA is enabled for the root account."},
+    "resources": [{"uid": "arn:aws:iam::111122223333:root", "type": "AwsIamUser", "region": "us-east-1"}],
+    "cloud": {"account": {"uid": "111122223333"}, "region": "us-east-1"},
+    "unmapped": {"compliance": {"CIS-1.4": ["1.5"]}}
+  },
+  {
+    "message": "Custom policy ops-full-access allows privilege escalation.",
+    "metadata": {"event_code": "iam_policy_allows_privilege_escalation", "product": {"name": "Prowler", "version": "4.5.0"}},
+    "severity": "High",
+    "status_code": "FAIL",
+    "status_detail": "Custom policy ops-full-access allows privilege escalation using the actions: '*'.",
+    "finding_info": {"title": "Ensure no Customer Managed IAM policies allow actions that may lead into Privilege Escalation."},
+    "resources": [{"uid": "arn:aws:iam::111122223333:policy/ops-full-access", "type": "AwsIamPolicy", "region": "us-east-1"}]
+  },
+  {
+    "message": "No CloudTrail trails enabled with logging in all regions.",
+    "metadata": {"event_code": "cloudtrail_multi_region_enabled", "product": {"name": "Prowler", "version": "4.5.0"}},
+    "severity": "High",
+    "status_code": "FAIL",
+    "status_detail": "No CloudTrail trails enabled and logging were found in region ap-southeast-1.",
+    "finding_info": {"title": "Ensure CloudTrail is enabled in all regions."},
+    "resources": [{"uid": "arn:aws:cloudtrail:ap-southeast-1:111122223333:trail", "type": "AwsCloudTrailTrail", "region": "ap-southeast-1"}],
+    "unmapped": {"compliance": {"CIS-1.4": ["3.1"]}}
+  },
+  {
+    "message": "EBS Default Encryption is not activated.",
+    "metadata": {"event_code": "ec2_ebs_default_encryption", "product": {"name": "Prowler", "version": "4.5.0"}},
+    "status_code": "FAIL",
+    "status_detail": "EBS Default Encryption is not activated in ap-southeast-1.",
+    "finding_info": {"title": "Check if EBS Default Encryption is activated."},
+    "resources": [{"uid": "arn:aws:ec2:ap-southeast-1:111122223333:ebs-encryption-default", "region": "ap-southeast-1"}]
+  },
+  {
+    "message": "Security contact information is not registered.",
+    "metadata": {"event_code": "account_security_contact_information_is_registered", "product": {"name": "Prowler", "version": "4.5.0"}},
+    "severity": "Medium",
+    "status_code": "FAIL",
+    "status_detail": "Security contact information was not found for the account.",
+    "finding_info": {"title": "Ensure security contact information is registered."},
+    "resources": [{"uid": "arn:aws:iam::111122223333:root", "type": "Other", "region": "us-east-1"}]
+  },
+  {
+    "message": "S3 Bucket acme-finance-exports-example has Block Public Access enabled.",
+    "metadata": {"event_code": "s3_bucket_level_public_access_block", "product": {"name": "Prowler", "version": "4.5.0"}},
+    "severity": "Medium",
+    "status_code": "PASS",
+    "status_detail": "Block Public Access is configured for the S3 Bucket acme-finance-exports-example.",
+    "finding_info": {"title": "Check S3 Bucket Level Public Access Block."},
+    "resources": [{"uid": "arn:aws:s3:::acme-finance-exports-example", "type": "AwsS3Bucket", "region": "ap-southeast-1"}]
+  },
+  {
+    "message": "Malformed record with no resource; should be skipped, not crash the parser.",
+    "metadata": {"event_code": "guardduty_is_enabled"},
+    "status_code": "FAIL"
+  }
+]

@@ -1,0 +1,234 @@
+# Control mapping: scanner checks -> IT control domains.
+#
+# Each entry describes one audit issue and lists the scanner check IDs that evidence it.
+# Edit freely; mapper.py validates the structure on load.
+#
+# Fields:
+#   issue              Short audit-style name for the issue (used to group observations).
+#   control_domain     One of the six domains listed under `domains`.
+#   control_objective  What a well-designed control achieves (one sentence).
+#   business_risk      Plain-language consequence for a non-technical stakeholder.
+#   recommendation     What management should do.
+#   default_severity   Used ONLY when the scanner itself gives no severity (Checkov OSS
+#                      without a platform API key leaves severity empty). This is the
+#                      reviewer's judgement, recorded here so it is visible and editable.
+#   checks             Scanner check IDs (Checkov CKV_* and Prowler check names).
+#
+# No external framework references (COBIT, ISO 27001, NIST, etc.) are recorded here on
+# purpose. Framework references in the report come only from the scanner output.
+# Checks not listed here are reported as "Unmapped - requires review".
+
+domains:
+  - Logical Access & Identity
+  - Network Security
+  - Data Protection & Encryption
+  - Logging & Monitoring
+  - Backup & Resilience
+  - Change & Configuration Management
+
+mappings:
+  # ---------------------------------------------------------------- Logical Access & Identity
+  - issue: Unrestricted administrative permissions
+    control_domain: Logical Access & Identity
+    control_objective: Access rights are granted on a least-privilege basis and administrative privileges are restricted to authorized roles.
+    business_risk: Anyone holding this policy can do anything in the cloud account, including reading customer data, deleting systems, or creating new users. A single compromised account would give an attacker full control.
+    recommendation: Replace wildcard actions and resources with the specific permissions each role needs, and route administrative access through a separately approved, monitored role.
+    default_severity: HIGH
+    checks: [CKV_AWS_62, CKV_AWS_63, CKV_AWS_355, CKV2_AWS_40]
+
+  - issue: IAM policy permits privilege escalation or data exfiltration
+    control_domain: Logical Access & Identity
+    control_objective: Users cannot grant themselves additional access or move data outside approved boundaries.
+    business_risk: Users could raise their own access level or copy data out of the environment without approval, bypassing the access request and review process.
+    recommendation: Remove permissions that allow modifying IAM, exposing credentials or unconstrained writes, and require approved change requests for any exception.
+    default_severity: HIGH
+    checks: [CKV_AWS_286, CKV_AWS_287, CKV_AWS_288, CKV_AWS_289, CKV_AWS_290, iam_policy_allows_privilege_escalation]
+
+  - issue: Root account not protected by MFA
+    control_domain: Logical Access & Identity
+    control_objective: Highly privileged accounts are protected by strong, multi-factor authentication.
+    business_risk: The root account cannot be restricted by policy. If its password is stolen, the attacker has unrestricted control of the account and its billing.
+    recommendation: Enable hardware or virtual MFA on the root account, store credentials securely, and monitor any root sign-in.
+    default_severity: HIGH
+    checks: [iam_root_mfa_enabled]
+
+  - issue: Database authentication not integrated with central identity
+    control_domain: Logical Access & Identity
+    control_objective: Database access is authenticated through centrally managed identities that can be reviewed and revoked.
+    business_risk: Database logins are managed separately from the company's identity system, so leavers or role changes may not be reflected in database access.
+    recommendation: Enable IAM database authentication and include database accounts in periodic user access reviews.
+    default_severity: LOW
+    checks: [CKV_AWS_161]
+
+  - issue: Encryption key access not explicitly defined
+    control_domain: Logical Access & Identity
+    control_objective: Access to encryption keys is explicitly defined and limited to authorized principals.
+    business_risk: Without an explicit key policy, it is unclear who can use or administer the key that protects audit logs and data, which weakens assurance over who can decrypt that data.
+    recommendation: Attach an explicit key policy naming key administrators and key users, and review it alongside IAM access reviews.
+    default_severity: LOW
+    checks: [CKV2_AWS_64]
+
+  # ---------------------------------------------------------------- Network Security
+  - issue: Administrative ports open to the internet
+    control_domain: Network Security
+    control_objective: Remote administrative access is restricted to approved networks and users.
+    business_risk: Remote login services (SSH and RDP) can be reached by anyone on the internet, which invites automated password-guessing and exploitation attempts against servers.
+    recommendation: Restrict SSH and RDP to a corporate IP range or bastion host, or replace direct access with AWS Systems Manager Session Manager.
+    default_severity: HIGH
+    checks: [CKV_AWS_24, CKV_AWS_25, ec2_securitygroup_allow_ingress_from_internet_to_tcp_port_22]
+
+  - issue: Database reachable from the internet
+    control_domain: Network Security
+    control_objective: Production data stores are reachable only from approved application networks.
+    business_risk: The customer database has a public network address, so it can be targeted directly from the internet instead of only through the application.
+    recommendation: Disable public accessibility and place the database in private subnets reachable only from the application tier.
+    default_severity: HIGH
+    checks: [CKV_AWS_17]
+
+  - issue: Unrestricted outbound network traffic
+    control_domain: Network Security
+    control_objective: Outbound network traffic is limited to destinations required for business purposes.
+    business_risk: Systems can send data to any destination on the internet, which makes it easier to move stolen data out without being noticed.
+    recommendation: Limit egress rules to the ports and destinations the workload requires.
+    default_severity: MEDIUM
+    checks: [CKV_AWS_382]
+
+  - issue: Default security group not locked down
+    control_domain: Network Security
+    control_objective: Default network settings deny traffic unless explicitly approved.
+    business_risk: New resources that are not given a specific firewall rule may silently inherit permissive defaults.
+    recommendation: Configure the default security group of every VPC to deny all inbound and outbound traffic.
+    default_severity: MEDIUM
+    checks: [CKV2_AWS_12]
+
+  # ---------------------------------------------------------------- Data Protection & Encryption
+  - issue: Publicly accessible storage
+    control_domain: Data Protection & Encryption
+    control_objective: Access to production data is restricted to authorized users.
+    business_risk: Customer documents can be read by anyone on the internet who knows or guesses the bucket name, creating a risk of data breach, regulatory penalties and reputational damage.
+    recommendation: Make the bucket private, enable all four S3 Block Public Access settings, and confirm no business process depends on public access.
+    default_severity: HIGH
+    checks: [CKV_AWS_20, CKV_AWS_53, CKV_AWS_54, CKV_AWS_55, CKV_AWS_56, CKV2_AWS_6, s3_bucket_public_access]
+
+  - issue: Data not encrypted at rest
+    control_domain: Data Protection & Encryption
+    control_objective: Sensitive data is encrypted at rest.
+    business_risk: If storage media, snapshots or backups are accessed without authorization, the data can be read directly because it is not encrypted.
+    recommendation: Enable storage encryption on the database and data volumes. For existing RDS instances this requires restoring from an encrypted snapshot, so plan a change window.
+    default_severity: MEDIUM
+    checks: [CKV_AWS_16, CKV_AWS_3, rds_instance_storage_encrypted, ec2_ebs_default_encryption]
+
+  - issue: Encryption not using customer-managed keys
+    control_domain: Data Protection & Encryption
+    control_objective: Encryption keys for sensitive data are owned and controlled by the organization.
+    business_risk: Data is protected with provider-managed keys, so the organization cannot independently control, audit or revoke access to the keys protecting its data.
+    recommendation: Use customer-managed KMS keys for buckets and volumes holding sensitive data.
+    default_severity: LOW
+    checks: [CKV_AWS_145, CKV_AWS_189, s3_bucket_kms_encryption]
+
+  - issue: Encryption key rotation disabled
+    control_domain: Data Protection & Encryption
+    control_objective: Cryptographic keys are rotated on a defined schedule.
+    business_risk: The same key is used indefinitely, so if it were ever exposed, all data it has protected stays at risk.
+    recommendation: Enable automatic annual rotation on customer-managed KMS keys.
+    default_severity: MEDIUM
+    checks: [CKV_AWS_7]
+
+  # ---------------------------------------------------------------- Logging & Monitoring
+  - issue: Audit trail does not cover all regions
+    control_domain: Logging & Monitoring
+    control_objective: All administrative activity in the cloud environment is recorded.
+    business_risk: Activity in regions outside the trail is not recorded, so unauthorized changes made there could go undetected and could not be investigated.
+    recommendation: Configure CloudTrail as a multi-region trail including global service events.
+    default_severity: HIGH
+    checks: [CKV_AWS_67, cloudtrail_multi_region_enabled]
+
+  - issue: Audit log integrity not protected
+    control_domain: Logging & Monitoring
+    control_objective: Audit logs are protected from unauthorized modification and access.
+    business_risk: Without log validation and encryption, audit logs could be altered or read by unauthorized parties, which undermines their value as evidence.
+    recommendation: Enable CloudTrail log file validation and encrypt logs with a customer-managed KMS key.
+    default_severity: MEDIUM
+    checks: [CKV_AWS_35, CKV_AWS_36]
+
+  - issue: Audit events not monitored or alerted
+    control_domain: Logging & Monitoring
+    control_objective: Security-relevant events are reviewed and generate timely alerts.
+    business_risk: Activity is recorded but nobody is notified, so suspicious activity may only be found long after the fact, if at all.
+    recommendation: Send CloudTrail events to CloudWatch Logs with alarms for key events and an SNS notification topic.
+    default_severity: MEDIUM
+    checks: [CKV2_AWS_10, CKV_AWS_252]
+
+  - issue: Access and activity logging not enabled
+    control_domain: Logging & Monitoring
+    control_objective: Access to data and network activity is logged and retained for investigation.
+    business_risk: There is no record of who accessed stored files, the database, or network traffic, so a data breach could not be scoped or investigated.
+    recommendation: Enable S3 server access logging, VPC flow logs and RDS log exports to a central, access-restricted log store.
+    default_severity: MEDIUM
+    checks: [CKV_AWS_18, CKV2_AWS_11, CKV_AWS_129]
+
+  - issue: Database health monitoring not enabled
+    control_domain: Logging & Monitoring
+    control_objective: The performance and health of critical systems are monitored.
+    business_risk: Performance problems or unusual database activity may not be noticed until they affect customers.
+    recommendation: Enable RDS enhanced monitoring with an appropriate granularity.
+    default_severity: LOW
+    checks: [CKV_AWS_118]
+
+  # ---------------------------------------------------------------- Backup & Resilience
+  - issue: Automated database backups disabled
+    control_domain: Backup & Resilience
+    control_objective: Critical data is backed up regularly and can be restored within agreed timeframes.
+    business_risk: If the database is corrupted, deleted or hit by ransomware, there is no automated backup to recover customer data from.
+    recommendation: Set a backup retention period that meets the agreed recovery point objective and test restores periodically.
+    default_severity: MEDIUM
+    checks: [CKV_AWS_133, rds_instance_backup_enabled]
+
+  - issue: Object versioning disabled
+    control_domain: Backup & Resilience
+    control_objective: Stored data can be recovered after accidental or malicious change or deletion.
+    business_risk: Files overwritten or deleted by mistake or by an attacker cannot be recovered.
+    recommendation: Enable S3 versioning on buckets holding business records, with lifecycle rules to manage cost.
+    default_severity: LOW
+    checks: [CKV_AWS_21]
+
+  - issue: No redundancy across locations
+    control_domain: Backup & Resilience
+    control_objective: Critical services and data remain available if a single data center or region fails.
+    business_risk: An outage in a single AWS availability zone or region could make the database or stored files unavailable.
+    recommendation: Enable Multi-AZ for production databases and cross-region replication for critical buckets, in line with business continuity requirements.
+    default_severity: LOW
+    checks: [CKV_AWS_157, CKV_AWS_144]
+
+  - issue: Database deletion protection disabled
+    control_domain: Backup & Resilience
+    control_objective: Critical data stores are protected from accidental deletion.
+    business_risk: The production database can be deleted in a single action, for example by a mistaken script or command.
+    recommendation: Enable deletion protection on production databases.
+    default_severity: LOW
+    checks: [CKV_AWS_293]
+
+  # ---------------------------------------------------------------- Change & Configuration Management
+  - issue: Database patching not automated
+    control_domain: Change & Configuration Management
+    control_objective: Systems are kept up to date with vendor security patches.
+    business_risk: The database may run versions with known security weaknesses if minor updates are not applied.
+    recommendation: Enable automatic minor version upgrades within an approved maintenance window.
+    default_severity: LOW
+    checks: [CKV_AWS_226]
+
+  - issue: Network configuration undocumented or unused
+    control_domain: Change & Configuration Management
+    control_objective: Configuration items are documented, owned and removed when no longer needed.
+    business_risk: Firewall rules without a documented purpose, or that are not in use, are hard to review and tend to accumulate, increasing the chance that unnecessary access stays open.
+    recommendation: Require a description on every security group and rule, and remove security groups that are not attached to any resource.
+    default_severity: LOW
+    checks: [CKV_AWS_23, CKV2_AWS_5]
+
+  - issue: Data retention configuration not defined
+    control_domain: Change & Configuration Management
+    control_objective: Data retention settings are configured in line with the approved retention policy.
+    business_risk: Data may be kept longer than required (increasing privacy exposure and cost) or removed before retention obligations are met.
+    recommendation: Define S3 lifecycle rules that reflect the organization's data retention policy.
+    default_severity: LOW
+    checks: [CKV2_AWS_61]
